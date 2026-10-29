@@ -1,0 +1,38 @@
+
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: cleanup
+spec:
+  workspaces:
+    - name: source
+  steps:
+    - name: cleanup-files
+      image: alpine:3.19
+      script: |
+        #!/bin/sh
+        echo "Starting cleanup task..."
+        rm -rf /workspace/source/__pycache__
+        rm -rf /workspace/source/.pytest_cache
+        echo "Cleanup completed successfully."
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: test
+spec:
+  workspaces:
+    - name: source
+  steps:
+    - name: run-unit-tests
+      image: python:3.11-slim
+      workingDir: /workspace/source
+      script: |
+        #!/bin/sh
+        set -e
+        pip install --no-cache-dir nose
+        if [ -f requirements.txt ]; then
+          pip install --no-cache-dir -r requirements.txt
+        fi
+        nosetests -v
